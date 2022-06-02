@@ -1,0 +1,6 @@
+*.md
+*.xml
+.bloop
+.bsp
+.metals
+target/
