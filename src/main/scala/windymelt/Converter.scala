@@ -15,7 +15,19 @@ object Converter {
       var tagContext: Stack[String] = Stack.empty,
       var textStack: Stack[String] = Stack.empty,
       var isHeadSection: Boolean = true
-  )
+  ) {
+    def safePop(): String = {
+      if (this.textStack.size == 0) ""
+      else {
+        val popped = this.textStack.pop()
+        if (popped == " " || popped.isBlank) {
+          ""
+        } else {
+          popped
+        }
+      }
+    }
+  }
   def connectToXmlConverter[A](
       source: Source[ByteString, A]
   ): Source[ByteString, A] = {
@@ -32,17 +44,6 @@ object Converter {
             "\n\n"
           }
         }
-        val safePop: () => String =
-          () =>
-            if (ctx.textStack.size == 0) ""
-            else {
-              val popped = ctx.textStack.pop()
-              if (popped == " " || popped.isBlank) {
-                ""
-              } else {
-                popped
-              }
-            }
         var sectionDepth: Int = 1 // ## から始めたい
 
         // agg
@@ -61,50 +62,50 @@ object Converter {
                   ctx.tagContext.push(s.localName)
                   sectionDepth += 1
                   Seq(
-                    s"${safePop()}${possibleNewLine()}${"#"
+                    s"${ctx.safePop()}${possibleNewLine()}${"#"
                         .repeat(sectionDepth)} ${s.attributes.get("title").get}\n"
                   )
                 case "codeblock" =>
                   ctx.tagContext.push(s.localName)
                   val lang = s.attributes.get("lang").getOrElse("")
-                  val popped = safePop()
+                  val popped = ctx.safePop()
                   Seq(
                     s"${popped}${possibleNewLine()}```${lang}\n"
                   )
                 case "para" =>
                   ctx.tagContext.push(s.localName)
-                  Seq(s"${safePop()}\n\n")
+                  Seq(s"${ctx.safePop()}\n\n")
                 case "li" =>
                   ctx.tagContext.push(s.localName)
                   Seq("- ")
                 case "ul" =>
                   ctx.tagContext.push(s.localName)
-                  Seq(s"${safePop()}\n\n")
+                  Seq(s"${ctx.safePop()}\n\n")
                 case "code" =>
                   ctx.tagContext.push(s.localName)
-                  Seq(s"${safePop()} ")
+                  Seq(s"${ctx.safePop()} ")
                 case "em" =>
                   ctx.tagContext.push(s.localName)
-                  Seq(s"${safePop()} ")
+                  Seq(s"${ctx.safePop()} ")
                 case otherwise =>
                   println(s"*** Unknown element: ${s.localName}")
                   ctx.tagContext.push(s.localName)
-                  Seq(safePop())
+                  Seq(ctx.safePop())
               }
             case s: EndElement =>
               val t = ctx.tagContext.pop()
               // println(s"*** lasting text: ${textBuffer.size}")
               t match {
-                case "code"      => Seq(s"`${safePop()}`")
-                case "em"        => Seq(s" **${safePop()}** ")
-                case "codeblock" => Seq(s"${safePop()}\n```")
+                case "code"      => Seq(s"`${ctx.safePop()}`")
+                case "em"        => Seq(s" **${ctx.safePop()}** ")
+                case "codeblock" => Seq(s"${ctx.safePop()}\n```")
                 // TODO: treat ol
-                case "li" => Seq(s"${safePop()}\n")
+                case "li" => Seq(s"${ctx.safePop()}\n")
                 case "ul" => Seq("\n")
                 case "sec" =>
                   sectionDepth -= 1
-                  Seq(s"${safePop()}")
-                case "entry"   => Seq(s"${safePop()}\n") // EOF
+                  Seq(s"${ctx.safePop()}")
+                case "entry"   => Seq(s"${ctx.safePop()}\n") // EOF
                 case otherwise => Seq.empty // do nothing
               }
             case t: TextEvent =>
