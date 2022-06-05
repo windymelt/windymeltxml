@@ -11,6 +11,11 @@ import akka.stream.alpakka.xml.EndElement
 import akka.stream.alpakka.xml.TextEvent
 
 object Converter {
+  private case class Ctx(
+      var tagContext: Stack[String] = Stack.empty,
+      var textStack: Stack[String] = Stack.empty,
+      var isHeadSection: Boolean = true
+  )
   def connectToXmlConverter[A](
       source: Source[ByteString, A]
   ): Source[ByteString, A] = {
@@ -18,12 +23,10 @@ object Converter {
       .via(XmlParsing.parser)
       .statefulMapConcat(() => {
         // state
-        var context: Stack[String] = Stack.empty
-        var textBuffer: Stack[String] = Stack.empty
-        var isHeadSection = true
+        val ctx = Ctx()
         def possibleNewLine() = {
-          if (isHeadSection) {
-            isHeadSection = false
+          if (ctx.isHeadSection) {
+            ctx.isHeadSection = false
             ""
           } else {
             "\n\n"
@@ -31,9 +34,9 @@ object Converter {
         }
         val safePop: () => String =
           () =>
-            if (textBuffer.size == 0) ""
+            if (ctx.textStack.size == 0) ""
             else {
-              val popped = textBuffer.pop()
+              val popped = ctx.textStack.pop()
               if (popped == " " || popped.isBlank) {
                 ""
               } else {
@@ -48,48 +51,48 @@ object Converter {
             case s: StartElement =>
               s.localName match {
                 case "entry" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq() // should be root
                 case "meta" =>
                   // TODO: treat meta
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq()
                 case "sec" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   sectionDepth += 1
                   Seq(
                     s"${safePop()}${possibleNewLine()}${"#"
                         .repeat(sectionDepth)} ${s.attributes.get("title").get}\n"
                   )
                 case "codeblock" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   val lang = s.attributes.get("lang").getOrElse("")
                   val popped = safePop()
                   Seq(
                     s"${popped}${possibleNewLine()}```${lang}\n"
                   )
                 case "para" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq(s"${safePop()}\n\n")
                 case "li" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq("- ")
                 case "ul" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq(s"${safePop()}\n\n")
                 case "code" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq(s"${safePop()} ")
                 case "em" =>
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq(s"${safePop()} ")
                 case otherwise =>
                   println(s"*** Unknown element: ${s.localName}")
-                  context.push(s.localName)
+                  ctx.tagContext.push(s.localName)
                   Seq(safePop())
               }
             case s: EndElement =>
-              val t = context.pop()
+              val t = ctx.tagContext.pop()
               // println(s"*** lasting text: ${textBuffer.size}")
               t match {
                 case "code"      => Seq(s"`${safePop()}`")
@@ -108,7 +111,7 @@ object Converter {
               val trimmed = t.text.trim
               if (!trimmed.isEmpty() && !trimmed.isBlank()) {
                 // println(s"pushing [${trimmed}]")
-                textBuffer.push(trimmed)
+                ctx.textStack.push(trimmed)
               }
               Seq.empty
             case _ => Seq.empty
