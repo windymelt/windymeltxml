@@ -12,7 +12,6 @@ import akka.stream.alpakka.xml.TextEvent
 
 object Converter {
   case class Ctx(
-      var tagContext: Stack[String] = Stack.empty,
       var textStack: Stack[String] = Stack.empty,
       var isHeadSection: Boolean = true,
       var sectionDepth: Int = 1 // ## から始めたい
