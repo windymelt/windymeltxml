@@ -77,12 +77,8 @@ object Converter {
                 case None => Seq.empty
               }
             case t: TextEvent =>
-              val trimmed = t.text.trim
-              if (!trimmed.isEmpty() && !trimmed.isBlank()) {
-                // println(s"pushing [${trimmed}]")
-                ctx.textStack.push(trimmed)
-              }
-              Seq.empty
+              val (_, strs) = Text(t, ctx)
+              strs
             case _ => Seq.empty
           }
       })
