@@ -12,6 +12,8 @@ import akka.stream.alpakka.xml.StartElement
 import akka.stream.alpakka.xml.EndElement
 import akka.stream.alpakka.xml.TextEvent
 import akka.stream.scaladsl.Sink
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 object Hello extends App {
   val system = ActorSystem()
@@ -27,5 +29,8 @@ object Hello extends App {
     )
     .to(sink)
   val run = grph.run()
+  import scala.language.postfixOps
+  Await.ready(run, 10 seconds)
+  Thread.sleep(1000)
   run.foreach(anyway => system.terminate())(mat.executionContext)
 }
