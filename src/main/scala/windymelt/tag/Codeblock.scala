@@ -10,9 +10,8 @@ object Codeblock extends Tag {
       ctx: Converter.Ctx
   ): (Converter.Ctx, Seq[String]) = {
     val lang = elem.attributes.get("lang").getOrElse("")
-    val popped = ctx.safePop()
     ctx -> Seq(
-      s"${popped}${ctx.possibleNewLine()}```${lang}\n"
+      s"${ctx.possibleNewLine()}```${lang}\n"
     )
   }
   def closing(

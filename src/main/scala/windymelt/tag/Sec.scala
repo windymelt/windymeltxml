@@ -11,7 +11,7 @@ object Sec extends Tag {
   ): (Converter.Ctx, Seq[String]) = {
     ctx.sectionDepth += 1
     ctx -> Seq(
-      s"${ctx.safePop()}${ctx.possibleNewLine()}${"#"
+      s"${ctx.possibleNewLine()}${"#"
           .repeat(ctx.sectionDepth)} ${elem.attributes.get("title").get}\n"
     )
   }

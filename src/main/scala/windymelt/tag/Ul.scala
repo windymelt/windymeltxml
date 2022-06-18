@@ -8,7 +8,7 @@ object Ul extends Tag {
   override def opening(
       elem: StartElement,
       ctx: Converter.Ctx
-  ): (Converter.Ctx, Seq[String]) = ctx -> Seq(s"${ctx.safePop()}\n\n")
+  ): (Converter.Ctx, Seq[String]) = ctx -> Seq(s"\n\n")
   def closing(
       elem: EndElement,
       ctx: Converter.Ctx

@@ -60,13 +60,15 @@ object Converter {
         ev =>
           ev match {
             case s: StartElement =>
-              tagMap.get(s.localName) match {
-                case Some(tg) =>
-                  val (_, strs: Seq[String]) = tg.opening(s, ctx)
-                  strs
-                case None =>
-                  println(s"*** Unknown element: ${s.localName}")
-                  Seq(ctx.safePop())
+              Seq(ctx.safePop()) ++ {
+                tagMap.get(s.localName) match {
+                  case Some(tg) =>
+                    val (_, strs: Seq[String]) = tg.opening(s, ctx)
+                    strs
+                  case None =>
+                    println(s"*** Unknown element: ${s.localName}")
+                    Seq(ctx.safePop())
+                }
               }
             case s: EndElement =>
               tagMap.get(s.localName) match {
