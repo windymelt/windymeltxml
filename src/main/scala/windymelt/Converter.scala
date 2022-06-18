@@ -66,7 +66,8 @@ object Converter {
                   val (_, strs: Seq[String]) = tag.Para.opening(s, ctx)
                   strs
                 case "li" =>
-                  Seq("- ")
+                  val (_, strs: Seq[String]) = tag.Li.opening(s, ctx)
+                  strs
                 case "ul" =>
                   Seq(s"${ctx.safePop()}\n\n")
                 case "code" =>
@@ -87,7 +88,9 @@ object Converter {
                   val (_, strs: Seq[String]) = tag.Codeblock.closing(s, ctx)
                   strs
                 // TODO: treat ol
-                case "li" => Seq(s"${ctx.safePop()}\n")
+                case "li" =>
+                  val (_, strs: Seq[String]) = tag.Li.closing(s, ctx)
+                  strs
                 case "ul" => Seq("\n")
                 case "sec" =>
                   val (_, strs: Seq[String]) = tag.Sec.closing(s, ctx)
