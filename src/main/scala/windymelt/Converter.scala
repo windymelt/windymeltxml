@@ -52,7 +52,8 @@ object Converter {
             case s: StartElement =>
               s.localName match {
                 case "entry" =>
-                  Seq() // should be root
+                  val (_, strs: Seq[String]) = tag.Entry.opening(s, ctx)
+                  strs
                 case "meta" =>
                   // TODO: treat meta
                   Seq()
@@ -69,11 +70,14 @@ object Converter {
                   val (_, strs: Seq[String]) = tag.Li.opening(s, ctx)
                   strs
                 case "ul" =>
-                  Seq(s"${ctx.safePop()}\n\n")
+                  val (_, strs: Seq[String]) = tag.Ul.opening(s, ctx)
+                  strs
                 case "code" =>
-                  Seq(s"${ctx.safePop()} ")
+                  val (_, strs: Seq[String]) = tag.Code.opening(s, ctx)
+                  strs
                 case "em" =>
-                  Seq(s"${ctx.safePop()} ")
+                  val (_, strs: Seq[String]) = tag.Em.opening(s, ctx)
+                  strs
                 case otherwise =>
                   println(s"*** Unknown element: ${s.localName}")
                   Seq(ctx.safePop())
@@ -82,8 +86,12 @@ object Converter {
               val t = s.localName
               // println(s"*** lasting text: ${textBuffer.size}")
               t match {
-                case "code" => Seq(s"`${ctx.safePop()}`")
-                case "em"   => Seq(s" **${ctx.safePop()}** ")
+                case "code" =>
+                  val (_, strs: Seq[String]) = tag.Code.closing(s, ctx)
+                  strs
+                case "em" =>
+                  val (_, strs: Seq[String]) = tag.Em.closing(s, ctx)
+                  strs
                 case "codeblock" =>
                   val (_, strs: Seq[String]) = tag.Codeblock.closing(s, ctx)
                   strs
@@ -91,11 +99,15 @@ object Converter {
                 case "li" =>
                   val (_, strs: Seq[String]) = tag.Li.closing(s, ctx)
                   strs
-                case "ul" => Seq("\n")
+                case "ul" =>
+                  val (_, strs: Seq[String]) = tag.Ul.closing(s, ctx)
+                  strs
                 case "sec" =>
                   val (_, strs: Seq[String]) = tag.Sec.closing(s, ctx)
                   strs
-                case "entry" => Seq(s"${ctx.safePop()}\n") // EOF
+                case "entry" =>
+                  val (_, strs: Seq[String]) = tag.Entry.closing(s, ctx)
+                  strs
                 case "para" =>
                   val (_, strs: Seq[String]) = tag.Para.closing(s, ctx)
                   strs
