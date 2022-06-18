@@ -37,6 +37,17 @@ object Converter {
       }
     }
   }
+  val tagMap: Map[String, Tag] = Map(
+    "entry" -> tag.Entry,
+    "meta" -> tag.Meta,
+    "sec" -> tag.Sec,
+    "code" -> tag.Code,
+    "codeblock" -> tag.Codeblock,
+    "para" -> tag.Para,
+    "li" -> tag.Li,
+    "ul" -> tag.Ul,
+    "em" -> tag.Em
+  )
   def connectToXmlConverter[A](
       source: Source[ByteString, A]
   ): Source[ByteString, A] = {
@@ -50,68 +61,20 @@ object Converter {
         ev =>
           ev match {
             case s: StartElement =>
-              s.localName match {
-                case "entry" =>
-                  val (_, strs: Seq[String]) = tag.Entry.opening(s, ctx)
+              tagMap.get(s.localName) match {
+                case Some(tg) =>
+                  val (_, strs: Seq[String]) = tg.opening(s, ctx)
                   strs
-                case "meta" =>
-                  val (_, strs: Seq[String]) = tag.Meta.opening(s, ctx)
-                  strs
-                case "sec" =>
-                  val (_, strs: Seq[String]) = tag.Sec.opening(s, ctx)
-                  strs
-                case "codeblock" =>
-                  val (_, strs: Seq[String]) = tag.Codeblock.opening(s, ctx)
-                  strs
-                case "para" =>
-                  val (_, strs: Seq[String]) = tag.Para.opening(s, ctx)
-                  strs
-                case "li" =>
-                  val (_, strs: Seq[String]) = tag.Li.opening(s, ctx)
-                  strs
-                case "ul" =>
-                  val (_, strs: Seq[String]) = tag.Ul.opening(s, ctx)
-                  strs
-                case "code" =>
-                  val (_, strs: Seq[String]) = tag.Code.opening(s, ctx)
-                  strs
-                case "em" =>
-                  val (_, strs: Seq[String]) = tag.Em.opening(s, ctx)
-                  strs
-                case otherwise =>
+                case None =>
                   println(s"*** Unknown element: ${s.localName}")
                   Seq(ctx.safePop())
               }
             case s: EndElement =>
-              val t = s.localName
-              // println(s"*** lasting text: ${textBuffer.size}")
-              t match {
-                case "code" =>
-                  val (_, strs: Seq[String]) = tag.Code.closing(s, ctx)
+              tagMap.get(s.localName) match {
+                case Some(tg) =>
+                  val (_, strs: Seq[String]) = tg.closing(s, ctx)
                   strs
-                case "em" =>
-                  val (_, strs: Seq[String]) = tag.Em.closing(s, ctx)
-                  strs
-                case "codeblock" =>
-                  val (_, strs: Seq[String]) = tag.Codeblock.closing(s, ctx)
-                  strs
-                // TODO: treat ol
-                case "li" =>
-                  val (_, strs: Seq[String]) = tag.Li.closing(s, ctx)
-                  strs
-                case "ul" =>
-                  val (_, strs: Seq[String]) = tag.Ul.closing(s, ctx)
-                  strs
-                case "sec" =>
-                  val (_, strs: Seq[String]) = tag.Sec.closing(s, ctx)
-                  strs
-                case "entry" =>
-                  val (_, strs: Seq[String]) = tag.Entry.closing(s, ctx)
-                  strs
-                case "para" =>
-                  val (_, strs: Seq[String]) = tag.Para.closing(s, ctx)
-                  strs
-                case otherwise => Seq.empty // do nothing
+                case None => Seq.empty
               }
             case t: TextEvent =>
               val trimmed = t.text.trim
