@@ -60,11 +60,8 @@ object Converter {
                   val (_, strs: Seq[String]) = tag.Sec.opening(s, ctx)
                   strs
                 case "codeblock" =>
-                  val lang = s.attributes.get("lang").getOrElse("")
-                  val popped = ctx.safePop()
-                  Seq(
-                    s"${popped}${ctx.possibleNewLine()}```${lang}\n"
-                  )
+                  val (_, strs: Seq[String]) = tag.Codeblock.opening(s, ctx)
+                  strs
                 case "para" =>
                   Seq(s"${ctx.safePop()}\n\n")
                 case "li" =>
@@ -83,15 +80,17 @@ object Converter {
               val t = s.localName
               // println(s"*** lasting text: ${textBuffer.size}")
               t match {
-                case "code"      => Seq(s"`${ctx.safePop()}`")
-                case "em"        => Seq(s" **${ctx.safePop()}** ")
-                case "codeblock" => Seq(s"${ctx.safePop()}\n```\n")
+                case "code" => Seq(s"`${ctx.safePop()}`")
+                case "em"   => Seq(s" **${ctx.safePop()}** ")
+                case "codeblock" =>
+                  val (_, strs: Seq[String]) = tag.Codeblock.closing(s, ctx)
+                  strs
                 // TODO: treat ol
                 case "li" => Seq(s"${ctx.safePop()}\n")
                 case "ul" => Seq("\n")
                 case "sec" =>
-                  ctx.sectionDepth -= 1
-                  Seq(s"${ctx.safePop()}")
+                  val (_, strs: Seq[String]) = tag.Sec.closing(s, ctx)
+                  strs
                 case "entry"   => Seq(s"${ctx.safePop()}\n") // EOF
                 case otherwise => Seq.empty // do nothing
               }
