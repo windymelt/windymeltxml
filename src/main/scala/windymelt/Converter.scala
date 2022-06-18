@@ -55,8 +55,8 @@ object Converter {
                   val (_, strs: Seq[String]) = tag.Entry.opening(s, ctx)
                   strs
                 case "meta" =>
-                  // TODO: treat meta
-                  Seq()
+                  val (_, strs: Seq[String]) = tag.Meta.opening(s, ctx)
+                  strs
                 case "sec" =>
                   val (_, strs: Seq[String]) = tag.Sec.opening(s, ctx)
                   strs
